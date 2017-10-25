@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest>
+  <plugin name="TermoRescisaoFeriasProporcionais" label="Termo de Rescisao Ferias Proporcionais" plugin-version="1.0" ecidade-version="2.3.39" id-modulo="952">
+   <id id="TermoRescisaoFeriasProporcionais"> </id>
+   <files>
+    <file name="TermoRescisaoFeriasProporcionais.xml"      path="/modification/xml/TermoRescisaoFeriasProporcionais.xml" />
+   </files>
+  </plugin>  
+</manifest>

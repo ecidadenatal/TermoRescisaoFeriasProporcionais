@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<modification>
+  <name>TermoRescisaoFeriasProporcionais</name>
+  <id>TermoRescisaoFeriasProporcionais</id>
+  <ecidade-version>2.3.39</ecidade-version>
+  <file path='pes2_termorescisaomodimprime80.php'>
+    <operation>
+      <search regex="true"><![CDATA[(\$aFeriasVencidas = array\(\);)]]></search>
+      <add>
+        <![CDATA[$1
+        
+  $iCodigoGrupo65 = null;
+  $iCodigoGrupo66 = null;
+  $aMovimentacaoGrupo65 = array();
+
+]]>
+      </add>
+    </operation>
+    <operation>
+      <search regex="true"><![CDATA[(case\s*('|")65('|")\s*:)]]></search>
+      <add>
+        <![CDATA[$1
+        $iCodigoGrupo65 = $oDadosGrupo->rh114_agrupamentorubrica;
+]]>
+      </add>
+    </operation>
+    <operation>
+      <search regex="true"><![CDATA[(case\s*('|")66.1('|")\s*:)]]></search>
+      <add>
+        <![CDATA[$1
+        $iCodigoGrupo66 = $oDadosGrupo->rh114_agrupamentorubrica;
+]]>
+      </add>
+    </operation>    
+    <operation>
+      <search regex="true"><![CDATA[(\$aRubricas\[\$oDadosGrupo->rh114_agrupamentorubrica\]\[\]\s*=\s*\$oDadosMovimentacao;)]]></search>
+      <add>
+        <![CDATA[
+    /*
+     * Alteracao realizada para calcular o agrupamento das rubricas dos grupos 66.1 e 65 da seguinte forma:
+     *  - todas as rubricas marcadas no grupo 66 cujo o tipo é "V" sao somadas no grupo 66.1
+     *  - todas as rubricas marcadas no grupo 66 cujo o tipo é "P" sao somadas no grupo 65
+     */
+    if ($oDadosGrupo->rh113_codigo == "66.1") {
+        if ($oDadosMovimentacao->sTipoRubrica == "P") {
+          $aMovimentacaoGrupo65[] = $oDadosMovimentacao;
+        } else {
+          $aRubricas[$oDadosGrupo->rh114_agrupamentorubrica][] = $oDadosMovimentacao;
+        }
+    } else {
+      $aRubricas[$oDadosGrupo->rh114_agrupamentorubrica][] = $oDadosMovimentacao;
+    }
+
+]]>
+      </add>
+    </operation>   
+    <operation>
+      <search regex="true"><![CDATA[(foreach.*\$aGrupos.*\{)]]></search>
+      <add>
+        <![CDATA[  
+  /*
+   *  - Verificamos se foram encontradas rubricas no grupo 66 que deveriam constar no grupo 65.
+   * 
+   *  - Verificamos se o grupo 65 existe (Se nao existe configuracao de rubricas para o grupo 65, este grupo nao sera mostrado),
+   *    caso nao exista, criamos o grupo
+   * 
+   *  - Adicionamos as movimentacoes da rubricas do grupo 66 com o tipo "P" no grupo 65
+   */
+  if (count($aMovimentacaoGrupo65) > 0) {
+    
+    if (empty($iCodigoGrupo65)) {
+        
+        /*
+         * Realizamos este calculo para setar a posicao do grupo no array
+         * unicamente por questao de ordenacao das chaves do array 
+         */ 
+        $iCodigoGrupo65 = $iCodigoGrupo66 - 0.5;
+        
+        $oStdGrupo               = new StdClass;
+        $oStdGrupo->sDescricao   = '65 - Férias proporcionais '. $iFeriasAvos .'/12 avos';
+        $oStdGrupo->iCodigoGrupo = 65;
+        $oStdGrupo->iTipoGrupo   = 1;
+        $oStdGrupo->nValor       = 0;
+        $oStdGrupo->aRubricas    = array();
+        
+        
+        $aGrupos[$iCodigoGrupo65] = $oStdGrupo;
+        
+    }
+    
+    for ($iInd = 0; $iInd < count($aMovimentacaoGrupo65); $iInd++) {
+        $aRubricas[$iCodigoGrupo65][] = $aMovimentacaoGrupo65[$iInd];
+    }
+    
+  }
+  
+  //ordenamos o array dos grupos pela chave do array
+  ksort($aGrupos);
+  
+  $1]]>
+      </add>
+    </operation>           
+  </file>
+  
+  <file path='model/pessoal/CalculoFolha.model.php'>
+    <operation>
+      <search regex="true" flag="U"><![CDATA[(if\s*\(!empty\(\$sRubrica\)\)\s*{((\n.*)*)quantidade_rubrica)]]></search>
+      <add>
+        <![CDATA[$1, 0 as tipo_rubrica]]>
+      </add>
+    </operation>  
+    <operation>
+      <search regex="true" flag="U"><![CDATA[(if\s*\(\s*\$this->sTabela\s*==\s*('|")gerfres('|")\s*\)((\n*.*)*)quantidade_rubrica)]]></search>
+      <add>
+        <![CDATA[$1, {$this->sSigla}_tpp as tipo_rubrica]]>
+      </add>
+    </operation>      
+    <operation>
+      <search regex="true"><![CDATA[\$oRetorno->iProventoDesconto\s*=\s*\$oMovimentacao->provento_desconto;]]></search>
+      <add>
+        <![CDATA[$1
+      $oRetorno->sTipoRubrica      = $oMovimentacao->tipo_rubrica;
+]]>
+      </add>
+    </operation>
+  </file>
+  
+</modification>
